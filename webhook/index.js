@@ -42,8 +42,8 @@ function handleMessageEvent(event) {
         
         msg = {
             'type': 'image',
-            'originalContentUrl': `https://line-ict-moph.herokuapp.com/${event.source.userId}.png`,
-            'previewImageUrl': `https://line-ict-moph.herokuapp.com/${event.source.userId}.png`
+            'originalContentUrl': `https://teerapat-reminder.herokuapp.com/${event.source.userId}.png`,
+            'previewImageUrl': `https://teerapat-reminder.herokuapp.com/${event.source.userId}.png`
         }
     } else if (eventText === 'template button') {
         msg = {
