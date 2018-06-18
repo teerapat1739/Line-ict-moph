@@ -2,6 +2,7 @@
 const { client, init } = require('../config')
 const richApi = require('../rich-menu-api')
 const qrcode = require('../lib/genQrcode')
+const axios = require('axios');
 // richApi.createRichMenu()
 if(!init.richMenuId) {
     richApi.createRichMenu()
@@ -47,6 +48,8 @@ async function handleMessageEvent(event) {
         }
     }
     else if(eventText.includes('http')){
+        console.log("yes");
+
         await axios({
              method: 'post',
              url: 'https://southcentralus.api.cognitive.microsoft.com/customvision/v2.0/Prediction/16cbf68f-90b1-4c75-a5b4-de0ac749c8fa/url',
