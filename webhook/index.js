@@ -1,10 +1,7 @@
 
-const { client, init } = require('../config');
-const richApi = require('../rich-menu-api');
-const qrcode = require('../lib/genQrcode');
-const axios = require('axios');
-const request = require('request').defaults({encoding: null});
-
+const { client, init } = require('../config')
+const richApi = require('../rich-menu-api')
+const qrcode = require('../lib/genQrcode')
 // richApi.createRichMenu()
 if(!init.richMenuId) {
     richApi.createRichMenu()
@@ -21,14 +18,12 @@ const handleEvent = (event) => {
     richApi.changeToRichMenuId(event.source.userId, init.richMenuId)
     console.log("event"+init.richMenuId + " user>>" + event.source.userId);
     console.log("-------------------------------------------------------------------------------------------------------------------------------------------------");
-    console.log(event.message.text);
+    console.log(event);
     console.log("-------------------------------------------------------------------------------------------------------------------------------------------------");
 
     if (event.type === 'message' && event.message.type === 'text') {
-        let txt = event.message.text.toLowerCase()
-        console.log(typeof txt);
         handleMessageEvent(event);
-    }  else {clearScreenDown
+    } else {
         return Promise.resolve(null);
     }
 }
@@ -39,56 +34,98 @@ async function handleMessageEvent(event) {
         type: 'text',
         text: 'สวัสดีครัช'
     };
-    console.log(msg);
+
     var eventText = event.message.text.toLowerCase();
 
     if(eventText.includes('http')){
-       await axios({
-            method: 'post',
-            url: 'https://southcentralus.api.cognitive.microsoft.com/customvision/v2.0/Prediction/16cbf68f-90b1-4c75-a5b4-de0ac749c8fa/url',
-            headers: {
-                "Prediction-key": "6731b30f969b4e51b30cd07e899d2cdb",
-                'content-type': 'application/json'
-            },
-            data: {
-                "Url": event.message.text
-            }
-          }).then(res => {
-              console.log(res.data);
-              var body = res.data
-              var max = body.predictions[0];
-              for (let index = 0; index < body.predictions.length; index++) {
-                if( max.probability < body.predictions[index].probability) {
-                    max = body.predictions[index];
-                }
-                console.log(max.tagName  == "acne");
-                }
-                if(max.tagName == "acne") {
-                    msg = {
-                        type: 'text',
-                        text: 'ฉันคิดว่าคุณเป็นสิวนะ'
-                    };
-                }else if(max.tagName == "chickenpox") {
-                    msg = {
-                        type: 'text',
-                        text: 'คุณน่าจะเป็น อีสุกอีใส แล้วแหละ รีบไปหาหมอนะ'
-                    };
-                }else if(max.tagName == "shingles") {
-                    msg = {
-                        type: 'text',
-                        text: 'งูสวัด แล้วแหละ รีบไปหาหมอเลย'
-                    };
-                }
-          })
-          .catch(err => console.log(err))
-    }
+        await axios({
+             method: 'post',
+             url: 'https://southcentralus.api.cognitive.microsoft.com/customvision/v2.0/Prediction/16cbf68f-90b1-4c75-a5b4-de0ac749c8fa/url',
+             headers: {
+                 "Prediction-key": "6731b30f969b4e51b30cd07e899d2cdb",
+                 'content-type': 'application/json'
+             },
+             data: {
+                 "Url": event.message.text
+             }
+           }).then(res => {
+               console.log(res.data);
+               var body = res.data
+               var max = body.predictions[0];
+               for (let index = 0; index < body.predictions.length; index++) {
+                 if( max.probability < body.predictions[index].probability) {
+                     max = body.predictions[index];
+                 }
+                 console.log(max.tagName  == "acne");
+                 }
+                 if(max.tagName == "acne") {
+                     msg = {
+                         type: 'text',
+                         text: 'ฉันคิดว่าคุณเป็นสิวนะ'
+                     };
+                 }else if(max.tagName == "chickenpox") {
+                     msg = {
+                         type: 'text',
+                         text: 'คุณน่าจะเป็น อีสุกอีใส แล้วแหละ รีบไปหาหมอนะ'
+                     };
+                 }else if(max.tagName == "shingles") {
+                     msg = {
+                         type: 'text',
+                         text: 'งูสวัด แล้วแหละ รีบไปหาหมอเลย'
+                     };
+                 }
+           })
+           .catch(err => console.log(err))
+     }
     else if (eventText === 'qrcode') {
         console.log(`https://1ad0a7a5.ngrok.io/${event.source.userId}`);
         
         msg = {
             'type': 'image',
-            'originalContentUrl': `https://bot-teeapat-1.herokuapp.com/${event.source.userId}.png`,
-            'previewImageUrl': `https://bot-teeapat-1.herokuapp.com/${event.source.userId}.png`
+            'originalContentUrl': `https://line-ict-moph.herokuapp.com/${event.source.userId}.png`,
+            'previewImageUrl': `https://line-ict-moph.herokuapp.com/${event.source.userId}.png`
+        }
+    } else if (eventText === 'template button') {
+        msg = {
+            "type": "template",
+            "altText": "this is a buttons template",
+            "template": {
+                "type": "buttons",
+                "thumbnailImageUrl": "https://www.thesun.co.uk/wp-content/uploads/2017/03/fifa-17-2.jpg?strip=all&w=742&quality=100",
+                "title": "Menu",
+                "text": "Please select",
+                "actions": [{
+                    "type": "postback",
+                    "label": "Buy",
+                    "data": "action=buy&itemid=123"
+                }, {
+                    "type": "postback",
+                    "label": "Add to cart",
+                    "data": "action=add&itemid=123"
+                }, {
+                    "type": "uri",
+                    "label": "View detail",
+                    "uri": "http://example.com/page/123"
+                }]
+            }
+        }
+    } else if (eventText === 'template confirm') {
+        msg = {
+            "type": "template",
+            "altText": "this is a confirm template",
+            "template": {
+                "type": "confirm",
+                "text": "Are you sure?",
+                "actions": [{
+                    "type": "message",
+                    "label": "Yes",
+                    "text": "yes"
+                }, {
+                    "type": "message",
+                    "label": "No",
+                    "text": "no"
+                }]
+            }
         }
     } else if (eventText === 'food') {
         msg = {
