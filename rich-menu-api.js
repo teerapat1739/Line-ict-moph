@@ -4,6 +4,7 @@ const fs = require('fs')
 
 
 const changeToRichMenuId = (userId, richMenuId) => {
+    console.log(userId + ' >>  changeToRichMenuId >> ' + richMenuId)
     return axios({
                     method: 'POST',
                     url: `https://api.line.me/v2/bot/user/${userId}/richmenu/${richMenuId}`,
@@ -14,12 +15,13 @@ const changeToRichMenuId = (userId, richMenuId) => {
                 }).then(function (response) {
                     console.log('response >>> '+ response );
                 }).catch(function (error) {
-                    console.log(erro);
+                    console.log('error');
                 });
 
 }
 
 const createRichMenu = () =>{
+    console.log('createRichMenu')
     client.createRichMenu({
         size: { width: 2500, height: 1686 }, // Define size of rich menu
         selected: true, // Always display
@@ -51,7 +53,7 @@ const createRichMenu = () =>{
             });
          });
             console.log(richMenuId);
-            client.setRichMenuImage(richMenuId, fs.createReadStream('./menu.jpg')).then(res => console.log("success>>" +  res)).catch(err => console.log(err))    
+            client.setRichMenuImage(richMenuId, fs.createReadStream('./menu.jpg')).then(res => console.log("success>>" +  res)).catch(err => console.log(err))
       })
 }
 module.exports = {

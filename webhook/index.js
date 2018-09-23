@@ -3,15 +3,46 @@ const { client, init } = require('../config')
 const richApi = require('../rich-menu-api')
 const qrcode = require('../lib/genQrcode')
 const axios = require('axios');
+// const database = require('../firebase')
 // richApi.createRichMenu()
+const firebase = require('firebase')
+ // Initialize Firebase
+const config = {
+apiKey: "AIzaSyALsgpDOM0qm8UeLBwHbXNCuSzPuZ_tl9A",
+authDomain: "reminderapp-51318.firebaseapp.com",
+databaseURL: "https://reminderapp-51318.firebaseio.com",
+projectId: "reminderapp-51318",
+storageBucket: "reminderapp-51318.appspot.com",
+messagingSenderId: "570569057226"
+};
+firebase.initializeApp(config);
+
+const database = firebase.database()
+
+
+
 if(!init.richMenuId) {
     richApi.createRichMenu()
 }else{
     console.log("Rich-menu has been created");
 }
 
+var remindData
 
-const handleEvent = (event) => {
+database.ref('remind').on('value', (snapshot) => {
+    const reminds = [];
+    snapshot.forEach((childSnapshot) => {
+        reminds.push({
+            id: childSnapshot.key,
+            ...childSnapshot.val()
+        });
+    });
+    console.log(reminds)
+    remindData = getRemindData(reminds)
+})
+
+
+const handleEvent = async (event) => {
     qrcode.genQrcode(event.source.userId)
     console.log("gen qrcode for:  "+ event.source.userId + "  success");
     console.log("User ID is : " + event.source.userId);
@@ -22,19 +53,107 @@ const handleEvent = (event) => {
     console.log(event);
     console.log("-------------------------------------------------------------------------------------------------------------------------------------------------");
 
+    // interval Data
+    // const remindData = await getRemindData()
+
+    // const remindData = await getRemindData()
+
+    // console.log(reminds);
+    //////////////////////////////////////
+    let i = 0
+    const intervalData = setInterval(async () => {
+        const { id ,time, drug, userId } = await remindData[i]
+        let message
+        let thumbnailImageUrl
+        // if (time === '01:53' && userId === event.source.userId) {
+        if (userId === event.source.userId) {
+            console.log(id+ ' >> '+ drug.charAt(0).toUpperCase()+drug.slice(1))
+            if (drug === 'benzac') {
+                thumbnailImageUrl = 'benzac'
+            } else if (drug === 'valtrex') {
+                thumbnailImageUrl = 'Valtrex'
+            } else {
+                thumbnailImageUrl = 'CalamineLotion'
+            }
+            message = {
+                "type": "template",
+                "altText": "this is a carousel template",
+                "template": {
+                    "type": "carousel",
+                    "columns": [
+                        {
+                            "thumbnailImageUrl": `https://teerapat-reminder.herokuapp.com/drug/${thumbnailImageUrl}.jpg`,
+                            "title": drug.charAt(0).toUpperCase()+drug.slice(1),
+                            "text": "ทาหลังอาบน้า  บริเวณที่คัน",
+                            "actions": [
+                                {
+                                    "type": "postback",
+                                    "label": "เช้า-เย็น",
+                                    "data": "action=buy&itemid=111"
+                                },
+                            ]
+                        },
+                    ]
+                }
+            }
+            client.pushMessage(event.source.userId, message)
+            .then((res) => {
+                console.log(res);
+            })
+            .catch((err) => {
+                console.log(err);
+            });
+        }
+        i++
+        console.log(i);
+        console.log(remindData.length)
+        if (i >= remindData.length) {
+            clearIntervalData(intervalData)
+            console.log( i + ' < > '+ remindData.length + ' clearIntervalData ' + i > remindData.length);
+        }
+    },1000)
+    /////////////////////////////////////
+
+
     if (event.type === 'message' && event.message.type === 'text') {
-        handleMessageEvent(event);
+        handleMessageEvent(event)
+        // remindMessage(event)
     } else {
         return Promise.resolve(null);
     }
 }
 
 
+function clearIntervalData (intervalData) {
+    clearInterval(intervalData)
+}
+function getRemindData(data) {
+        return data
+}
 async function handleMessageEvent(event) {
     var msg = {
         type: 'text',
         text: 'สวัสดีครัช'
-    };
+    }
+    // let i = 0
+    // const intervalData = setInterval(async () => {
+    //     const { id ,time, drug } = await remindData[i]
+    //     if (time === '01:53') {
+    //         console.log(id+ ' >> '+ drug )
+    //         msg = {
+    //             type: 'text',
+    //             text: 'สวัสดีครัช' + id + 'มียา' + drug
+    //         };
+
+    //     }
+    //     i++
+    //     console.log(i);
+    //     console.log(remindData.length)
+    //     if (i >= remindData.length) {
+    //         clearIntervalData(intervalData)
+    //         console.log( i + ' < > '+ remindData.length + ' clearIntervalData ' + i > remindData.length);
+    //     }
+    // },1000)
 
     var eventText = event.message.text.toLowerCase();
 
@@ -89,49 +208,7 @@ async function handleMessageEvent(event) {
            })
            .catch(err => console.log(err))
      }
-    else if (eventText === 'template button') {
-        msg = {
-            "type": "template",
-            "altText": "this is a buttons template",
-            "template": {
-                "type": "buttons",
-                "thumbnailImageUrl": "https://www.thesun.co.uk/wp-content/uploads/2017/03/fifa-17-2.jpg?strip=all&w=742&quality=100",
-                "title": "Menu",
-                "text": "Please select",
-                "actions": [{
-                    "type": "postback",
-                    "label": "Buy",
-                    "data": "action=buy&itemid=123"
-                }, {
-                    "type": "postback",
-                    "label": "Add to cart",
-                    "data": "action=add&itemid=123"
-                }, {
-                    "type": "uri",
-                    "label": "View detail",
-                    "uri": "http://example.com/page/123"
-                }]
-            }
-        }
-    } else if (eventText === 'template confirm') {
-        msg = {
-            "type": "template",
-            "altText": "this is a confirm template",
-            "template": {
-                "type": "confirm",
-                "text": "Are you sure?",
-                "actions": [{
-                    "type": "message",
-                    "label": "Yes",
-                    "text": "yes"
-                }, {
-                    "type": "message",
-                    "label": "No",
-                    "text": "no"
-                }]
-            }
-        }
-    } else if (eventText === 'drug') {
+  else if (eventText === 'drug') {
         msg = {
             "type": "template",
             "altText": "this is a carousel template",
@@ -148,16 +225,6 @@ async function handleMessageEvent(event) {
                                 "label": "เช้า-เย็น",
                                 "data": "action=buy&itemid=111"
                             },
-                            {
-                                "type": "postback",
-                                "label": "Add to cart",
-                                "data": "action=add&itemid=111"
-                            },
-                            {
-                                "type": "uri",
-                                "label": "View detail",
-                                "uri": "https://front-sf312.azurewebsites.net"
-                            }
                         ]
                     },
                     {
@@ -170,16 +237,6 @@ async function handleMessageEvent(event) {
                                 "label": "เช้า-เย็น",
                                 "data": "action=buy&itemid=111"
                             },
-                            {
-                                "type": "postback",
-                                "label": "Add to cart",
-                                "data": "action=add&itemid=111"
-                            },
-                            {
-                                "type": "uri",
-                                "label": "View detail",
-                                "uri": "https://front-sf312.azurewebsites.net"
-                            }
                         ]
                     },
                     {
@@ -192,16 +249,6 @@ async function handleMessageEvent(event) {
                                 "label": "เช้า-เย็น",
                                 "data": "action=buy&itemid=111"
                             },
-                            {
-                                "type": "postback",
-                                "label": "Add to cart",
-                                "data": "action=add&itemid=111"
-                            },
-                            {
-                                "type": "uri",
-                                "label": "View detail",
-                                "uri": "https://front-sf312.azurewebsites.net"
-                            }
                         ]
                     },
                 ]
