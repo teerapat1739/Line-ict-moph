@@ -19,7 +19,13 @@ firebase.initializeApp(config);
 
 const database = firebase.database()
 
+//////////////////////Simsimi////////////////////////////
+const Simsimi = require('simsimi');
 
+var simsimi = new Simsimi({
+  key: 'a46baa43-18db-4012-a157-bfb7fd33f887'
+});
+//////////////////////Simsimi////////////////////////////
 
 if(!init.richMenuId) {
     richApi.createRichMenu()
@@ -66,7 +72,7 @@ const handleEvent = async (event) => {
         let message
         let thumbnailImageUrl
         // if (time === '01:53' && userId === event.source.userId) {
-        if (userId === event.source.userId) {
+        if (userId && userId === event.source.userId) {
             console.log(id+ ' >> '+ drug.charAt(0).toUpperCase()+drug.slice(1))
             if (drug === 'benzac') {
                 thumbnailImageUrl = 'benzac'
@@ -84,7 +90,7 @@ const handleEvent = async (event) => {
                         {
                             "thumbnailImageUrl": `https://teerapat-reminder.herokuapp.com/drug/${thumbnailImageUrl}.jpg`,
                             "title": drug.charAt(0).toUpperCase()+drug.slice(1),
-                            "text": "ทาหลังอาบน้า  บริเวณที่คัน",
+                            "text": "ทาหลังอาบน้า",
                             "actions": [
                                 {
                                     "type": "postback",
@@ -96,9 +102,39 @@ const handleEvent = async (event) => {
                     ]
                 }
             }
+            const comfirmMsg = {
+                "type": "template",
+                "altText": "this is a confirm template",
+                "template": {
+                    "type": "confirm",
+                    "text": "กินยาหรือยัง?",
+                    "actions": [
+                        {
+                          "type": "message",
+                          "label": "Yes",
+                          "text": "yes"
+                        },
+                        {
+                          "type": "message",
+                          "label": "No",
+                          "text": "no"
+                        }
+                    ]
+                }
+              }
             client.pushMessage(event.source.userId, message)
             .then((res) => {
                 console.log(res);
+                if (id) {
+                    database.ref(`remind/${id}`)
+                    .remove()
+                    .then(() => {
+                        console.log('Data was removed')
+                    }).catch((e) => {
+                        console.log('Did not remove data', e)
+                    })
+                    client.pushMessage(event.source.userId, comfirmMsg)
+                }
             })
             .catch((err) => {
                 console.log(err);
@@ -131,31 +167,24 @@ function getRemindData(data) {
         return data
 }
 async function handleMessageEvent(event) {
-    var msg = {
-        type: 'text',
-        text: 'สวัสดีครัช'
-    }
-    // let i = 0
-    // const intervalData = setInterval(async () => {
-    //     const { id ,time, drug } = await remindData[i]
-    //     if (time === '01:53') {
-    //         console.log(id+ ' >> '+ drug )
-    //         msg = {
-    //             type: 'text',
-    //             text: 'สวัสดีครัช' + id + 'มียา' + drug
-    //         };
+    var msg
+    var eventText = event.message.text.toLowerCase()
 
-    //     }
-    //     i++
-    //     console.log(i);
-    //     console.log(remindData.length)
-    //     if (i >= remindData.length) {
-    //         clearIntervalData(intervalData)
-    //         console.log( i + ' < > '+ remindData.length + ' clearIntervalData ' + i > remindData.length);
-    //     }
-    // },1000)
-
-    var eventText = event.message.text.toLowerCase();
+    simsimi.listen('tell about Thailand', function(err, masg) {
+        if(err) return console.error(err);
+        msg = {
+            type : 'text',
+            text: masg
+        }
+        client.pushMessage(event.source.userId, msg)
+            .then((res) => {
+                console.log(res);
+            })
+            .catch((err) => {
+                console.log(err);
+            });
+        console.log('Hackathon bot say:', masg);
+      });
 
     if (eventText === 'qrcode') {
         console.log(`https://1ad0a7a5.ngrok.io/${event.source.userId}`);

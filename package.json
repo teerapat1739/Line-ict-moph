@@ -18,6 +18,7 @@
     "imgur-node-api": "^0.1.0",
     "qr-image": "^3.2.0",
     "request": "^2.85.0",
-    "require-path": "^0.3.0"
+    "require-path": "^0.3.0",
+    "simsimi": "^2.0.2"
   }
 }
